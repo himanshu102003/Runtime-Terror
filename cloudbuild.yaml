@@ -67,7 +67,7 @@ timeout: '1800s'
 
 artifacts:
   objects:
-    location: 'gs://runtime-terror-code/build-artifacts/${SHORT_SHA}/'
+    location: 'gs://runtime-terror-logs/build-artifacts/${SHORT_SHA}/'
     paths: 
       - 'backend/target/**'
       - 'backend/src/test/java/**'

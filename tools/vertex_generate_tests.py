@@ -21,7 +21,7 @@ def get_access_token():
         credentials.refresh(auth_request)
         
         # Get project ID from environment or credentials
-        project_id = project or os.environ.get('GOOGLE_CLOUD_PROJECT', 'runtime-terror-473009')
+        project_id = project or os.environ.get('GOOGLE_CLOUD_PROJECT', 'runtime-terror-473409')
         
         return credentials.token, project_id
     except Exception as e:
