@@ -11,8 +11,8 @@ steps:
       pip install --upgrade pip
       pip install requests google-auth lxml google-cloud-aiplatform vertexai
 
-## 2) Generate AI tests with Python + Java
-- name: 'gcr.io/runtime-terror-473409/java-python-builder:latest'
+# 2) Generate AI tests
+- name: 'python:3.11'
   id: 'generate-tests'
   entrypoint: 'bash'
   env:
@@ -20,28 +20,34 @@ steps:
   args:
     - '-c'
     - |
-      python3 -m venv /workspace/venv
       source /workspace/venv/bin/activate
-      pip install --upgrade pip
-      pip install requests google-auth google-cloud-aiplatform vertexai
-
+      cd /workspace
       python tools/vertex_generate_tests.py \
         --source_dir=backend/src/main/java/com/github/yildizmy/service \
         --out_dir=backend/src/test/java
-
+      
       echo "Validating generated test files..."
       find backend/src/test/java -name "*Test.java" -type f | while read file; do
         echo "Checking $file"
-        if ! javac -cp "backend/target/classes:$(find backend -name '*.jar' | tr '\n' ':')" "$file"; then
+        if ! javac -cp "backend/target/classes:$(find backend -name "*.jar" | tr '\n' ':')" "$file" 2>/dev/null; then
           echo "WARNING: $file has compilation issues"
         fi
       done
+# 3) Verify Java version and run Maven tests
+- name: 'maven:3.9.4-eclipse-temurin-11'
+  id: 'verify-java'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      echo "Java version (should be 11):"
+      java -version
+      echo "Maven version:"
+      mvn -version
 
-
-# 3) Run Maven tests
-- name: 'gcr.io/cloud-builders/mvn'
+- name: 'maven:3.9.4-eclipse-temurin-11'
   id: 'run-tests'
-  dir: 'backend'
+  entrypoint: 'mvn'
   args: 
     - 'clean'
     - 'test'
