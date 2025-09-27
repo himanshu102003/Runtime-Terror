@@ -25,27 +25,20 @@ steps:
       python tools/vertex_generate_tests.py \
         --source_dir=backend/src/main/java/com/github/yildizmy/service \
         --out_dir=backend/src/test/java
-      
-      echo "Validating generated test files..."
-      find backend/src/test/java -name "*Test.java" -type f | while read file; do
-        echo "Checking $file"
-        if ! javac -cp "backend/target/classes:$(find backend -name "*.jar" | tr '\n' ':')" "$file" 2>/dev/null; then
-          echo "WARNING: $file has compilation issues"
-        fi
-      done
+
 # 3) Verify Java version and run Maven tests
-- name: 'maven:3.9.4-eclipse-temurin-11'
+- name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
   id: 'verify-java'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      echo "Java version (should be 11):"
+      echo "Java version (should be 17):"
       java -version
       echo "Maven version:"
       mvn -version
 
-- name: 'maven:3.9.4-eclipse-temurin-11'
+- name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
   id: 'run-tests'
   entrypoint: 'mvn'
   dir: 'backend'
