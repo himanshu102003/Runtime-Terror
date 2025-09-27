@@ -1,0 +1,78 @@
+steps:
+# 1) Install Python dependencies
+- name: 'python:3.11'
+  id: 'install-deps'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      python -m venv /workspace/venv
+      source /workspace/venv/bin/activate
+      pip install --upgrade pip
+      pip install requests google-auth lxml google-cloud-aiplatform vertexai
+
+# 2) Generate AI tests
+- name: 'python:3.11'
+  id: 'generate-tests'
+  entrypoint: 'bash'
+  env:
+    - 'GOOGLE_CLOUD_PROJECT=runtime-terror-473009'
+  args:
+    - '-c'
+    - |
+      source /workspace/venv/bin/activate
+      cd /workspace
+      python tools/vertex_generate_tests.py \
+        --source_dir=backend/src/main/java/com/github/yildizmy/service \
+        --out_dir=backend/src/test/java
+      
+      echo "Validating generated test files..."
+      find backend/src/test/java -name "*Test.java" -type f | while read file; do
+        echo "Checking $file"
+        if ! javac -cp "backend/target/classes:$(find backend -name "*.jar" | tr '\n' ':')" "$file" 2>/dev/null; then
+          echo "WARNING: $file has compilation issues"
+        fi
+      done
+
+# 3) Run Maven tests
+- name: 'gcr.io/cloud-builders/mvn'
+  id: 'run-tests'
+  dir: 'backend'
+  args: 
+    - 'clean'
+    - 'test'
+    - 'jacoco:report'
+
+# 4) Upload reports to GCS
+- name: 'gcr.io/cloud-builders/gsutil'
+  id: 'upload-reports'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      gsutil -m cp -r backend/target gs://runtime-terror-code/reports/$SHORT_SHA/
+      gsutil -m cp -r backend/src/test/java gs://runtime-terror-code/reports/$SHORT_SHA/tests/
+
+# 5) Check coverage
+- name: 'python:3.11'
+  id: 'check-coverage'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      source /workspace/venv/bin/activate
+      python tools/check_coverage.py backend/target/site/jacoco/jacoco.xml 0.40
+
+timeout: '1800s'
+
+artifacts:
+  objects:
+    location: 'gs://runtime-terror-code/build-artifacts/${SHORT_SHA}/'
+    paths: 
+      - 'backend/target/**'
+      - 'backend/src/test/java/**'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 10
