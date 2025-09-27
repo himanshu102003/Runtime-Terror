@@ -50,8 +50,8 @@ steps:
   args:
     - '-c'
     - |
-      gsutil -m cp -r backend/target gs://runtime-terror-code/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-code/reports/$SHORT_SHA/tests/
+      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
+      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
 
 # 5) Check coverage
 - name: 'python:3.11'
