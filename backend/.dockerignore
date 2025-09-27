@@ -1,5 +1,0 @@
-# ignore the target directory, which contains output from Maven, from the Docker build context
-target
-
-# ignore .git and .cache folders
-.git
