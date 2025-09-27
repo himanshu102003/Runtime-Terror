@@ -11,7 +11,7 @@ steps:
       pip install --upgrade pip
       pip install requests google-auth lxml google-cloud-aiplatform vertexai
 
-# 2) Generate AI tests
+# # 2) Generate AI tests
 - name: 'python:3.11'
   id: 'generate-tests'
   entrypoint: 'bash'
@@ -22,10 +22,16 @@ steps:
     - |
       source /workspace/venv/bin/activate
       cd /workspace
+      
+      # Clean existing generated tests to avoid conflicts
+      find backend/src/test/java -name "*Test.java" -type f -delete || true
+      
       python tools/vertex_generate_tests.py \
         --source_dir=backend/src/main/java/com/github/yildizmy/service \
         --out_dir=backend/src/test/java
-
+      
+      echo "Generated test files:"
+      find backend/src/test/java -name "*Test.java" -type f
 # 3) Verify Java version and run Maven tests
 - name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
   id: 'verify-java'
