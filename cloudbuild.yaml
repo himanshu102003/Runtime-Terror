@@ -48,6 +48,7 @@ steps:
 - name: 'maven:3.9.4-eclipse-temurin-11'
   id: 'run-tests'
   entrypoint: 'mvn'
+  dir: 'backend'
   args: 
     - 'clean'
     - 'test'
