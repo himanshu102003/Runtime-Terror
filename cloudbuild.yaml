@@ -23,7 +23,8 @@ steps:
       cd /workspace
       python tools/vertex_generate_tests.py \
         --source_dir=src/main/java/io/github/mariazevedo88/financialjavaapi/util \
-        --out_dir=src/test/java
+        --out_dir=src/test/java \
+        --include_project_context
 
 # 3) Verify Java version and run Maven tests
 - name: 'maven:3.9.4-eclipse-temurin-11'
