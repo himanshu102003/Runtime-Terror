@@ -16,7 +16,7 @@ steps:
   id: 'generate-tests'
   entrypoint: 'bash'
   env:
-    - 'GOOGLE_CLOUD_PROJECT=runtime-terror-473009'
+    - 'GOOGLE_CLOUD_PROJECT=runtime-terror-473409'
   args:
     - '-c'
     - |
