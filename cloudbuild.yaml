@@ -76,4 +76,4 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2-MEDIUM'
+  machineType: 'E2_MEDIUM'
