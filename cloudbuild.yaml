@@ -22,7 +22,7 @@ steps:
       source /workspace/venv/bin/activate
       cd /workspace
       python tools/vertex_generate_tests.py \
-        --source_dir=src/main/java/io/github/mariazevedo88/financialjavaapi \
+        --source_dir=src/main/java/io/github/mariazevedo88/financialjavaapi/util \
         --out_dir=src/test/java
 
 # 3) Verify Java version and run Maven tests
@@ -63,7 +63,7 @@ steps:
     - '-c'
     - |
       source /workspace/venv/bin/activate
-      python tools/check_coverage.py backend/target/site/jacoco/jacoco.xml 0.40
+      python tools/check_coverage.py target/site/jacoco/jacoco.xml 0.40
 
 timeout: '1800s'
 
