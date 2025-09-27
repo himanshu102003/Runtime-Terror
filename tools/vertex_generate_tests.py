@@ -240,8 +240,12 @@ def try_generate_with_model(api_endpoint: str, access_token: str, source_code: s
 
 def main():
     parser = argparse.ArgumentParser(description="Generate JUnit 5 test classes using Vertex AI")
-    parser.add_argument("--input_dir", type=str, required=True, help="Path to directory containing Java source files")
-    parser.add_argument("--output_dir", type=str, required=True, help="Path to directory where test classes will be saved")
+    parser.add_argument("--source_dir", 
+                       default="backend/src/main/java/com/github/yildizmy/service", 
+                       help="Directory with source .java files")
+    parser.add_argument("--out_dir", 
+                       default="backend/src/test/java", 
+                       help="Where to write generated tests")
     args = parser.parse_args()
 
     input_dir = args.input_dir
