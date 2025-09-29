@@ -1,0 +1,4 @@
+com.github.yildizmy.service.UserService
+com.github.yildizmy.service.TransactionService
+com.github.yildizmy.service.WalletService
+com.github.yildizmy.service.RoleService
