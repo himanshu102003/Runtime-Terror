@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
@@ -29,10 +30,15 @@
     <commons-text.version>1.13.0</commons-text.version>
   </properties>
 
+  <!-- Repositories -->
   <repositories>
     <repository>
-      <id>evosuite-repo</id>
-      <url>https://maven.evosuite.org/repo/</url>
+      <id>central</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+    <repository>
+      <id>evosuite</id>
+      <url>https://maven.evosuite.org/repo</url>
     </repository>
   </repositories>
 
@@ -56,7 +62,7 @@
       <version>3.1.0</version>
     </dependency>
 
-    <!-- Spring Boot -->
+    <!-- Spring Boot Starters -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -148,7 +154,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- EvoSuite Standalone Runtime for tests -->
+    <!-- EvoSuite Runtime -->
     <dependency>
       <groupId>org.evosuite</groupId>
       <artifactId>evosuite-standalone-runtime</artifactId>
@@ -196,17 +202,11 @@
         </configuration>
       </plugin>
 
-      <!-- EvoSuite Maven Plugin -->
+      <!-- EvoSuite Plugin -->
       <plugin>
         <groupId>org.evosuite.plugins</groupId>
         <artifactId>evosuite-maven-plugin</artifactId>
         <version>${evosuite.version}</version>
-        <repositories>
-          <repository>
-            <id>evosuite-repo</id>
-            <url>https://maven.evosuite.org/repo/</url>
-          </repository>
-        </repositories>
         <executions>
           <execution>
             <id>generate-tests</id>
