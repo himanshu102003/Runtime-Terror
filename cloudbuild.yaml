@@ -11,27 +11,20 @@ steps:
       pip install --upgrade pip
       pip install requests google-auth lxml google-cloud-aiplatform vertexai
 
-# # 2) Generate AI tests
-- name: 'python:3.11'
+# 2) Generate tests using EvoSuite
+- name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'generate-tests'
   entrypoint: 'bash'
-  env:
-    - 'GOOGLE_CLOUD_PROJECT=runtime-terror-473409'
+  dir: 'backend'
   args:
     - '-c'
     - |
-      source /workspace/venv/bin/activate
-      cd /workspace
-      
-      # Clean existing generated tests to avoid conflicts
-      find backend/src/test/java -name "*Test.java" -type f -delete || true
-      
-      python tools/vertex_generate_tests.py \
-        --source_dir=backend/src/main/java/com/github/yildizmy/service \
-        --out_dir=backend/src/test/java
-      
+      echo "Cleaning old tests..."
+      find src/test/java -name "*Test.java" -type f -delete || true
+      echo "Running EvoSuite..."
+      mvn evosuite:generate evosuite:export
       echo "Generated test files:"
-      find backend/src/test/java -name "*Test.java" -type f
+      find src/test/java -name "*Test.java" -type f
 # 3) Verify Java version and run Maven tests
 - name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
   id: 'verify-java'
