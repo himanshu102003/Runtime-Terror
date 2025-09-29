@@ -12,9 +12,9 @@ steps:
       pip install --upgrade pip
       pip install requests lxml google-auth
 
-# 2) Generate tests using Randoop
+# 2) Clean old tests
 - name: 'maven:3.9.4-eclipse-temurin-17'
-  id: 'generate-tests'
+  id: 'clean-old-tests'
   entrypoint: 'bash'
   dir: 'backend'
   args:
@@ -23,12 +23,16 @@ steps:
       set -e
       echo "Cleaning old test files..."
       find src/test/java -name "*Test.java" -type f -delete || true
-      echo "Generating tests with Randoop..."
-      mvn randoop:gentests
-      echo "Generated test files:"
-      find target/generated-test-sources/randoop -name "*Test.java" -type f || echo "No tests generated!"
 
-# 3) Verify Java & Maven versions
+# 3) Generate tests using Randoop
+- name: 'maven:3.9.4-eclipse-temurin-17'
+  id: 'generate-randoop-tests'
+  entrypoint: 'mvn'
+  dir: 'backend'
+  args:
+    - 'randoop:gentests'
+
+# 4) Verify Java & Maven versions (debugging)
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
@@ -38,17 +42,17 @@ steps:
       java -version
       mvn -version
 
-# 4) Run tests + generate JaCoCo coverage report
+# 5) Run tests + generate JaCoCo coverage report
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
   entrypoint: 'mvn'
   dir: 'backend'
-  args: 
+  args:
     - 'clean'
     - 'test'
     - 'jacoco:report'
 
-# 5) Upload reports + generated tests to GCS
+# 6) Upload reports + generated tests to GCS
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
   entrypoint: 'bash'
@@ -59,9 +63,9 @@ steps:
       REPORTS_DIR="gs://runtime-terror-logs/reports/$SHORT_SHA"
       echo "Uploading reports to $REPORTS_DIR ..."
       gsutil -m cp -r backend/target "$REPORTS_DIR/"
-      gsutil -m cp -r target/generated-test-sources/randoop "$REPORTS_DIR/tests/"
+      gsutil -m cp -r backend/target/generated-test-sources/randoop "$REPORTS_DIR/generated-tests/"
 
-# 6) Check coverage threshold
+# 7) Check coverage threshold (example: 40%)
 - name: 'python:3.11'
   id: 'check-coverage'
   entrypoint: 'bash'
@@ -77,9 +81,9 @@ timeout: '1800s'
 artifacts:
   objects:
     location: 'gs://runtime-terror-logs/build-artifacts/${SHORT_SHA}/'
-    paths: 
+    paths:
       - 'backend/target/**'
-      - 'target/generated-test-sources/randoop/**'
+      - 'backend/target/generated-test-sources/randoop/**'
 
 options:
   logging: CLOUD_LOGGING_ONLY
