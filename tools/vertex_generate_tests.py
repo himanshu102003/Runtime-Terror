@@ -18,7 +18,7 @@ def get_access_token():
         credentials.refresh(auth_request)
         
         # Get project ID from environment or credentials
-        project_id = project or os.environ.get('GOOGLE_CLOUD_PROJECT', 'runtime-terror-473409')
+        project_id = project or os.environ.get('GOOGLE_CLOUD_PROJECT', 'runtime-terror-473009')
         
         return credentials.token, project_id
     except Exception as e:
@@ -77,53 +77,19 @@ def try_generate_with_model(api_endpoint: str, access_token: str, source_code: s
     """Try to generate tests using a specific model endpoint."""
     
     prompt = f"""
-Generate comprehensive JUnit 5 test cases for the following Spring Boot service class.
+Generate comprehensive JUnit 5 test cases for the following Java class.
+Requirements:
+1. Use proper package declaration: package {package_name};
+2. Include all necessary imports
+3. Use @ExtendWith(MockitoExtension.class) for mocking
+4. Test all public methods with positive, negative, and edge cases
+5. Use meaningful test method names
+6. Include proper assertions
+7. Mock external dependencies
+8. Provide only clean Java code without explanations or markdown
 
-REQUIREMENTS:
-1. Package declaration: package {package_name};
-2. Import statements must include:
-   - org.junit.jupiter.api.*
-   - org.mockito.*
-   - org.springframework.boot.test.context.SpringBootTest
-   - org.springframework.test.context.junit.jupiter.SpringJUnitConfig
-   - All necessary domain classes and dependencies
-
-3. Class structure:
-   - @ExtendWith(MockitoExtension.class) 
-   - @SpringBootTest (if testing Spring components)
-   - Private @Mock fields for dependencies
-   - Private @InjectMocks field for the class under test
-   - @BeforeEach setup method if needed
-
-4. Test methods should:
-   - Use @Test annotation
-   - Follow naming convention: methodName_condition_expectedResult
-   - Test positive cases, negative cases, and edge cases
-   - Use proper assertions (assertEquals, assertThrows, assertNotNull, etc.)
-   - Mock external dependencies properly
-   - Include @DisplayName annotations for clarity
-
-5. Handle common Spring Boot patterns:
-   - Repository mocking
-   - Service layer testing
-   - Exception handling
-   - Validation testing
-   - Security context if needed
-
-6. Use realistic test data and avoid hardcoded values where possible
-
-7. Ensure all imports are valid and the code compiles without errors
-
-8. Do NOT include:
-   - Markdown formatting
-   - Explanatory text
-   - Comments about what the test does
-   - Package-info or module declarations
-
-Source code to test:
+Source code:
 {source_code}
-
-Generate ONLY the Java test class code:
 """
     
     request_body = {
@@ -132,10 +98,9 @@ Generate ONLY the Java test class code:
             "parts": [{"text": prompt}]
         }],
         "generationConfig": {
-            "temperature": 0.2,  # Reduced for more consistent output
-            "topP": 0.9,
-            "maxOutputTokens": 8192,
-            "candidateCount": 1
+            "temperature": 0.1,
+            "topP": 0.8,
+            "maxOutputTokens": 64000
         }
     }
 
@@ -170,11 +135,6 @@ Generate ONLY the Java test class code:
         test_code = response_json['candidates'][0]['content']['parts'][0]['text']
         test_code = clean_generated_code(test_code)
         
-        # Validate the generated code has basic structure
-        if not validate_generated_test(test_code, class_name):
-            print(f"⚠️  Generated test for {class_name} failed validation")
-            return False
-        
         # Create output directory structure matching the package structure
         package_path = package_name.replace('.', '/')
         full_out_dir = os.path.join(out_dir, package_path)
@@ -199,24 +159,94 @@ Generate ONLY the Java test class code:
     except Exception as e:
         print(f"❌ Unexpected error for {class_name}: {e}")
         return False
-    
-def validate_generated_test(test_code: str, class_name: str) -> bool:
-    """Validate that the generated test has basic required structure."""
-    required_elements = [
-        f"class {class_name}Test",
-        "@Test",
-        "import org.junit.jupiter.api",
-        f"package "
+
+
+def should_skip_file(file_path):
+    """Check if file should be skipped for test generation."""
+    # Skip test files, interfaces, enums, and certain utility classes
+    skip_patterns = [
+        'Test.java',
+        'Tests.java',
+        'Application.java',
+        'Config.java'
     ]
     
-    for element in required_elements:
-        if element not in test_code:
-            print(f"❌ Missing required element: {element}")
-            return False
+    filename = os.path.basename(file_path)
+    return any(pattern in filename for pattern in skip_patterns)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate JUnit tests using Vertex AI")
+    parser.add_argument("--source_dir", 
+                       default="backend/src/main/java/com/github/yildizmy/service", 
+                       help="Directory with source .java files")
+    parser.add_argument("--out_dir", 
+                       default="backend/src/test/java", 
+                       help="Where to write generated tests")
+    args = parser.parse_args()
+
+    print("🔐 Authenticating with Google Cloud...")
+    try:
+        token, project = get_access_token()
+        print(f"✅ Successfully authenticated for project: {project}")
+    except Exception as e:
+        print(f"❌ Authentication failed: {e}")
+        exit(1)
+
+    # Ensure source directory exists
+    if not os.path.exists(args.source_dir):
+        print(f"❌ Source directory does not exist: {args.source_dir}")
+        exit(1)
+
+    successful_generations = 0
+    failed_generations = 0
     
-    # Check for basic Java syntax
-    if test_code.count('{') != test_code.count('}'):
-        print(f"❌ Unbalanced braces in generated test")
-        return False
-        
-    return True
+    print(f"🔍 Scanning for Java files in: {args.source_dir}")
+    
+    for root, _, files in os.walk(args.source_dir):
+        for file in files:
+            if file.endswith(".java"):
+                file_path = os.path.join(root, file)
+                
+                if should_skip_file(file_path):
+                    print(f"⏭️  Skipping: {file}")
+                    continue
+                
+                class_name = file[:-5]  # Remove .java extension
+                
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        code = f.read()
+                    
+                    # Skip empty files
+                    if not code.strip():
+                        print(f"⏭️  Skipping empty file: {file}")
+                        continue
+                    
+                    package_name = extract_package_name(code)
+                    if not package_name:
+                        print(f"⚠️  No package found in {file}, using default")
+                        package_name = "com.github.yildizmy"
+                    
+                    relative_path = os.path.relpath(root, args.source_dir)
+                    
+                    print(f"📝 Processing: {class_name} (package: {package_name})")
+                    
+                    if generate_tests(token, project, code, class_name, package_name, args.out_dir, relative_path):
+                        successful_generations += 1
+                    else:
+                        failed_generations += 1
+                    
+                    # Add a small delay to avoid rate limiting
+                    time.sleep(2)
+                    
+                except Exception as e:
+                    print(f"❌ Error processing {file}: {e}")
+                    failed_generations += 1
+    
+    print(f"\n📊 Test Generation Summary:")
+    print(f"✅ Successful: {successful_generations}")
+    print(f"❌ Failed: {failed_generations}")
+    print(f"📁 Output directory: {args.out_dir}")
+    
+    if failed_generations > 0:
+        exit(1)
