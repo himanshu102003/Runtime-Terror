@@ -2,12 +2,14 @@ package com.github.yildizmy.service;
 
 import com.github.yildizmy.domain.entity.User;
 import com.github.yildizmy.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -21,31 +23,61 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Test
-    void getReferenceById_shouldReturnUserReference() {
-        var userId = 1L;
-        var expectedUser = new User();
-        expectedUser.setId(userId);
+    private User user;
 
-        when(userRepository.getReferenceById(userId)).thenReturn(expectedUser);
-
-        var result = userService.getReferenceById(userId);
-
-        assertNotNull(result);
-        assertEquals(userId, result.getId());
-
-        verify(userRepository).getReferenceById(userId);
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(1L);
+        user.setUsername("testuser");
+        user.setEmail("test@example.com");
+        user.setFirstName("Test");
+        user.setLastName("User");
     }
 
     @Test
-    void getReferenceById_shouldThrowExceptionWhenUserNotFound() {
-        var nonExistentUserId = 999L;
+    void findById_shouldReturnUser_whenUserExists() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        when(userRepository.getReferenceById(nonExistentUserId))
-                .thenThrow(new EntityNotFoundException("User not found"));
+        Optional<User> result = userService.findById(1L);
 
-        assertThrows(EntityNotFoundException.class, () -> userService.getReferenceById(nonExistentUserId));
+        assertTrue(result.isPresent());
+        assertEquals(user.getId(), result.get().getId());
+        assertEquals(user.getUsername(), result.get().getUsername());
 
-        verify(userRepository).getReferenceById(nonExistentUserId);
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
+    void findById_shouldReturnEmpty_whenUserDoesNotExist() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        Optional<User> result = userService.findById(999L);
+
+        assertFalse(result.isPresent());
+
+        verify(userRepository).findById(999L);
+    }
+
+    @Test
+    void existsByUsername_shouldReturnTrue_whenUserExists() {
+        when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(true);
+
+        boolean result = userService.existsByUsername("testuser");
+
+        assertTrue(result);
+
+        verify(userRepository).existsByUsernameIgnoreCase("testuser");
+    }
+
+    @Test
+    void existsByUsername_shouldReturnFalse_whenUserDoesNotExist() {
+        when(userRepository.existsByUsernameIgnoreCase("nonexistent")).thenReturn(false);
+
+        boolean result = userService.existsByUsername("nonexistent");
+
+        assertFalse(result);
+
+        verify(userRepository).existsByUsernameIgnoreCase("nonexistent");
     }
 }

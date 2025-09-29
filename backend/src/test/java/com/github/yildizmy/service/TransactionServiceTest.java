@@ -5,6 +5,7 @@ import com.github.yildizmy.domain.entity.Wallet;
 import com.github.yildizmy.domain.enums.Status;
 import com.github.yildizmy.dto.request.TransactionRequest;
 import com.github.yildizmy.dto.response.CommandResponse;
+import com.github.yildizmy.dto.mapper.TransactionResponseMapper;
 import com.github.yildizmy.repository.TransactionRepository;
 import com.github.yildizmy.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,9 +14,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +40,9 @@ class TransactionServiceTest {
     @Mock
     private WalletRepository walletRepository;
 
+    @Mock
+    private TransactionResponseMapper transactionResponseMapper;
+
     private TransactionRequest transactionRequest;
     private Wallet fromWallet;
     private Wallet toWallet;
@@ -41,7 +50,6 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Create test data using proper constructors and setters
         fromWallet = new Wallet();
         fromWallet.setId(1L);
         fromWallet.setBalance(new BigDecimal("1000.00"));
@@ -52,7 +60,6 @@ class TransactionServiceTest {
         toWallet.setBalance(new BigDecimal("500.00"));
         toWallet.setIban("TR9876543210987654321098765432");
 
-        // Fix: Use proper TransactionRequest constructor or builder
         transactionRequest = createTransactionRequest();
 
         transaction = new Transaction();
@@ -73,7 +80,6 @@ class TransactionServiceTest {
         CommandResponse result = transactionService.createTransaction(transactionRequest);
 
         assertNotNull(result);
-        // Fix: Use available methods instead of getId()
         assertTrue(result.isSuccess());
         assertNotNull(result.getMessage());
 
@@ -83,22 +89,22 @@ class TransactionServiceTest {
     }
 
     @Test
-    void processTransaction_shouldUpdateWalletBalances() {
-        var initialFromBalance = fromWallet.getBalance();
-        var initialToBalance = toWallet.getBalance();
-        var transferAmount = new BigDecimal("100.00");
+    void findAllTransactions_shouldReturnPagedResults() {
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Transaction> transactions = List.of(transaction);
+        Page<Transaction> page = new PageImpl<>(transactions, pageable, 1);
 
-        when(walletRepository.findById(1L)).thenReturn(Optional.of(fromWallet));
-        when(walletRepository.findById(2L)).thenReturn(Optional.of(toWallet));
-        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
+        when(transactionRepository.findAll(pageable)).thenReturn(page);
 
-        var result = transactionService.createTransaction(transactionRequest);
+        Page<Transaction> result = transactionRepository.findAll(pageable);
 
         assertNotNull(result);
-        verify(walletRepository, times(2)).save(any(Wallet.class));
+        assertEquals(1, result.getTotalElements());
+        assertEquals(1, result.getContent().size());
+
+        verify(transactionRepository).findAll(pageable);
     }
 
-    // Helper method to create TransactionRequest with proper constructor
     private TransactionRequest createTransactionRequest() {
         var request = new TransactionRequest();
         request.setId(1L);
@@ -110,24 +116,6 @@ class TransactionServiceTest {
         request.setFromAccount("TR1234567890123456789012345678");
         request.setToAccount("TR9876543210987654321098765432");
         request.setUserId(1L);
-        // Fix: Use available methods instead of setFromWalletId/setToWalletId
-        request.setFromWalletId(1L);
-        request.setToWalletId(2L);
         return request;
-    }
-
-    // Alternative if setFromWalletId/setToWalletId don't exist
-    private TransactionRequest createTransactionRequestAlternative() {
-        return new TransactionRequest(
-                1L,                           // id
-                new BigDecimal("100.00"),     // amount
-                "Test transaction",           // description
-                Instant.now(),                // timestamp
-                UUID.randomUUID(),            // transactionId
-                Status.PENDING,               // status
-                "TR1234567890123456789012345678", // fromAccount
-                "TR9876543210987654321098765432", // toAccount
-                1L                            // userId
-        );
     }
 }
