@@ -25,43 +25,12 @@
     <junit.jupiter.version>5.11.3</junit.jupiter.version>
     <mockito.version>5.12.0</mockito.version>
     <swagger.version>2.2.25</swagger.version>
-    <evosuite.version>1.2.1</evosuite.version>
+    <randoop.version>4.10.2</randoop.version>
     <jacoco.version>0.8.12</jacoco.version>
     <commons-text.version>1.13.0</commons-text.version>
   </properties>
 
-  <!-- Repositories -->
-  <repositories>
-    <repository>
-      <id>central</id>
-      <url>https://repo1.maven.org/maven2/</url>
-    </repository>
-    <repository>
-      <id>evosuite</id>
-      <url>https://maven.evosuite.org/repo</url>
-    </repository>
-  </repositories>
-
   <dependencies>
-    <!-- OpenAPI/Swagger -->
-    <dependency>
-      <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <version>${swagger.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-core</artifactId>
-      <version>${swagger.version}</version>
-    </dependency>
-
-    <!-- Jakarta Validation -->
-    <dependency>
-      <groupId>jakarta.validation</groupId>
-      <artifactId>jakarta.validation-api</artifactId>
-      <version>3.1.0</version>
-    </dependency>
-
     <!-- Spring Boot Starters -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -154,11 +123,11 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- EvoSuite Runtime -->
+    <!-- Randoop runtime (needed for test generation) -->
     <dependency>
-      <groupId>org.evosuite</groupId>
-      <artifactId>evosuite-standalone-runtime</artifactId>
-      <version>1.0.5</version>
+      <groupId>randoop</groupId>
+      <artifactId>randoop</artifactId>
+      <version>${randoop.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -202,25 +171,27 @@
         </configuration>
       </plugin>
 
-      <!-- EvoSuite Plugin -->
+      <!-- Randoop Plugin -->
       <plugin>
-        <groupId>org.evosuite.plugins</groupId>
-        <artifactId>evosuite-maven-plugin</artifactId>
-        <version>${evosuite.version}</version>
+        <groupId>org.randoop</groupId>
+        <artifactId>randoop-maven-plugin</artifactId>
+        <version>${randoop.version}</version>
         <executions>
           <execution>
             <id>generate-tests</id>
+            <phase>generate-test-sources</phase>
             <goals>
-              <goal>generate</goal>
-              <goal>export</goal>
+              <goal>gentests</goal>
             </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/generated-tests</outputDirectory>
+              <testPackageName>com.github.yildizmy.service</testPackageName>
+              <classListFile>${project.basedir}/randoop-classes.txt</classListFile>
+              <junitOutputDir>${project.build.directory}/generated-test-sources/randoop</junitOutputDir>
+              <timeLimitInSeconds>60</timeLimitInSeconds>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <cutClasses>com.github.yildizmy.service.*</cutClasses>
-          <projectCP>${project.build.outputDirectory}</projectCP>
-          <reportDir>${project.build.directory}/evosuite-reports</reportDir>
-        </configuration>
       </plugin>
 
       <!-- JaCoCo Plugin -->
@@ -243,6 +214,7 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
 </project>
