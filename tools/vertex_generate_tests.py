@@ -94,11 +94,19 @@ Requirements:
 11. Use @Mock and @InjectMocks annotations instead of manual mock creation
 12. Provide only clean Java code without explanations or markdown
 
+SPECIAL HANDLING FOR LOMBOK LOGGERS:
+- If the class uses @Log4j2 or similar Lombok logger annotations, DO NOT try to mock the logger
+- Instead, test the actual behavior and verify side effects
+- Use @CaptureSystemOutput or test the actual log output indirectly
+- Focus on testing the business logic, not the logging statements
+- For event listeners like CacheEventListener, test that the method executes without errors
+
 IMPORTANT: Use these correct imports:
 - import static org.mockito.Mockito.*;
 - import org.mockito.MockedStatic;
 - DO NOT import org.apache.logging.log4j.core.* (causes compilation issues)
 - For logging tests, mock the logger interface, not core classes
+- For Lombok @Log4j2 classes, do NOT attempt to mock the 'log' field
 
 Source code:
 {source_code}
