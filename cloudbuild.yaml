@@ -19,7 +19,7 @@ steps:
   entrypoint: 'mvn'
   dir: 'backend'
   args:
-    - 'randoop:gentests'
+    - 'mvn org.randoop:randoop-maven-plugin:4.7.2:gentests'
 
 # 4) Verify Java & Maven versions (debugging)
 - name: 'maven:3.9.4-eclipse-temurin-17'
