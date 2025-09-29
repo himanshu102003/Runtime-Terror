@@ -1,5 +1,5 @@
 steps:
-# 1) Install Python dependencies
+# 1) Install Python dependencies (only needed for coverage script)
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
@@ -9,7 +9,7 @@ steps:
       python -m venv /workspace/venv
       source /workspace/venv/bin/activate
       pip install --upgrade pip
-      pip install requests google-auth lxml google-cloud-aiplatform vertexai
+      pip install requests lxml google-auth
 
 # 2) Generate tests using EvoSuite
 - name: 'maven:3.9.4-eclipse-temurin-17'
@@ -25,8 +25,9 @@ steps:
       mvn evosuite:generate evosuite:export
       echo "Generated test files:"
       find src/test/java -name "*Test.java" -type f
+
 # 3) Verify Java version and run Maven tests
-- name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
+- name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
   args:
@@ -37,7 +38,7 @@ steps:
       echo "Maven version:"
       mvn -version
 
-- name: 'maven:3.9.4-eclipse-temurin-17'  # Changed from 11 to 17
+- name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
   entrypoint: 'mvn'
   dir: 'backend'
