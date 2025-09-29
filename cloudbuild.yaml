@@ -12,17 +12,6 @@ steps:
       pip install --upgrade pip
       pip install requests lxml google-auth
 
-# 2) Clean old tests
-- name: 'maven:3.9.4-eclipse-temurin-17'
-  id: 'clean-old-tests'
-  entrypoint: 'bash'
-  dir: 'backend'
-  args:
-    - '-c'
-    - |
-      set -e
-      echo "Cleaning old test files..."
-      find src/test/java -name "*Test.java" -type f -delete || true
 
 # 3) Generate tests using Randoop
 - name: 'maven:3.9.4-eclipse-temurin-17'
