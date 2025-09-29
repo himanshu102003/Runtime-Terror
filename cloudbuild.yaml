@@ -1,5 +1,5 @@
 steps:
-# 1) Install Python dependencies (for coverage validation script)
+# 1) Install Python dependencies (for coverage validation)
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
@@ -23,15 +23,13 @@ steps:
       set -e
       echo "Cleaning old test files..."
       find src/test/java -name "*Test.java" -type f -delete || true
-
       echo "Running EvoSuite test generation..."
       mvn -B org.evosuite.plugins:evosuite-maven-plugin:1.2.1:generate \
           org.evosuite.plugins:evosuite-maven-plugin:1.2.1:export
-
       echo "Generated test files:"
       find src/test/java -name "*Test.java" -type f || echo "No tests generated!"
 
-# 3) Verify Java & Maven versions (debugging step)
+# 3) Verify Java & Maven versions (debugging)
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
@@ -51,7 +49,7 @@ steps:
     - 'test'
     - 'jacoco:report'
 
-# 5) Upload reports + generated tests to GCS
+# 5) Upload reports & generated tests to GCS
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
   entrypoint: 'bash'
@@ -59,9 +57,10 @@ steps:
     - '-c'
     - |
       set -e
-      echo "Uploading reports to gs://runtime-terror-logs/reports/$SHORT_SHA ..."
-      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
+      REPORTS_DIR="gs://runtime-terror-logs/reports/$SHORT_SHA"
+      echo "Uploading reports to $REPORTS_DIR ..."
+      gsutil -m cp -r backend/target "$REPORTS_DIR/"
+      gsutil -m cp -r backend/src/test/java "$REPORTS_DIR/tests/"
 
 # 6) Check coverage threshold (example: 40%)
 - name: 'python:3.11'
