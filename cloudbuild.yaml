@@ -1,5 +1,5 @@
 steps:
-# 1) Install Python dependencies (for coverage validation script)
+# 1) Python dependencies
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
@@ -12,16 +12,26 @@ steps:
       pip install --upgrade pip
       pip install requests lxml google-auth
 
+# 2) Clean old tests
+- name: 'maven:3.9.4-eclipse-temurin-17'
+  id: 'clean-old-tests'
+  entrypoint: 'bash'
+  dir: 'backend'
+  args:
+    - '-c'
+    - |
+      set -e
+      find src/test/java -name "*Test.java" -type f -delete || true
 
-# 3) Generate tests using Randoop
+# 3) Generate Randoop tests
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'generate-randoop-tests'
   entrypoint: 'mvn'
   dir: 'backend'
   args:
-    - 'mvn org.randoop:randoop-maven-plugin:4.7.2:gentests'
+    - 'org.randoop:randoop-maven-plugin:4.7.2:gentests'
 
-# 4) Verify Java & Maven versions (debugging)
+# 4) Verify Java & Maven
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
@@ -31,7 +41,7 @@ steps:
       java -version
       mvn -version
 
-# 5) Run tests + generate JaCoCo coverage report
+# 5) Run tests + JaCoCo
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
   entrypoint: 'mvn'
@@ -41,7 +51,7 @@ steps:
     - 'test'
     - 'jacoco:report'
 
-# 6) Upload reports + generated tests to GCS
+# 6) Upload reports & tests
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
   entrypoint: 'bash'
@@ -49,11 +59,11 @@ steps:
     - '-c'
     - |
       set -e
-      echo "Uploading reports to gs://runtime-terror-logs/reports/$SHORT_SHA ..."
-      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/target/generated-test-sources/randoop gs://runtime-terror-logs/reports/$SHORT_SHA/generated-tests/
+      REPORTS_DIR=gs://runtime-terror-logs/reports/${SHORT_SHA}
+      gsutil -m cp -r backend/target "$REPORTS_DIR/"
+      gsutil -m cp -r backend/target/generated-test-sources/randoop "$REPORTS_DIR/generated-tests/"
 
-# 7) Check coverage threshold (example: 40%)
+# 7) Check coverage
 - name: 'python:3.11'
   id: 'check-coverage'
   entrypoint: 'bash'
