@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
@@ -30,6 +29,13 @@
     <commons-text.version>1.13.0</commons-text.version>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>evosuite-repo</id>
+      <url>https://maven.evosuite.org/repo/</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <!-- OpenAPI/Swagger -->
     <dependency>
@@ -50,7 +56,7 @@
       <version>3.1.0</version>
     </dependency>
 
-    <!-- Spring Boot Starters -->
+    <!-- Spring Boot -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -141,13 +147,14 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
-           <!-- https://mvnrepository.com/artifact/org.evosuite/evosuite-standalone-runtime -->
-<dependency>
-    <groupId>org.evosuite</groupId>
-    <artifactId>evosuite-standalone-runtime</artifactId>
-    <version>1.0.5</version>
-    <scope>test</scope>
-</dependency>
+
+    <!-- EvoSuite Standalone Runtime for tests -->
+    <dependency>
+      <groupId>org.evosuite</groupId>
+      <artifactId>evosuite-standalone-runtime</artifactId>
+      <version>1.0.5</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -189,11 +196,17 @@
         </configuration>
       </plugin>
 
-      <!-- EvoSuite Plugin -->
+      <!-- EvoSuite Maven Plugin -->
       <plugin>
         <groupId>org.evosuite.plugins</groupId>
         <artifactId>evosuite-maven-plugin</artifactId>
         <version>${evosuite.version}</version>
+        <repositories>
+          <repository>
+            <id>evosuite-repo</id>
+            <url>https://maven.evosuite.org/repo/</url>
+          </repository>
+        </repositories>
         <executions>
           <execution>
             <id>generate-tests</id>
