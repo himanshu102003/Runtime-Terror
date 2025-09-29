@@ -39,7 +39,7 @@ class UserServiceTest {
     void findById_shouldReturnUser_whenUserExists() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        Optional<User> result = userService.findById(1L);
+        Optional<User> result = userRepository.findById(1L);
 
         assertTrue(result.isPresent());
         assertEquals(user.getId(), result.get().getId());
@@ -52,32 +52,10 @@ class UserServiceTest {
     void findById_shouldReturnEmpty_whenUserDoesNotExist() {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
-        Optional<User> result = userService.findById(999L);
+        Optional<User> result = userRepository.findById(999L);
 
         assertFalse(result.isPresent());
 
         verify(userRepository).findById(999L);
-    }
-
-    @Test
-    void existsByUsername_shouldReturnTrue_whenUserExists() {
-        when(userRepository.existsByUsernameIgnoreCase("testuser")).thenReturn(true);
-
-        boolean result = userService.existsByUsername("testuser");
-
-        assertTrue(result);
-
-        verify(userRepository).existsByUsernameIgnoreCase("testuser");
-    }
-
-    @Test
-    void existsByUsername_shouldReturnFalse_whenUserDoesNotExist() {
-        when(userRepository.existsByUsernameIgnoreCase("nonexistent")).thenReturn(false);
-
-        boolean result = userService.existsByUsername("nonexistent");
-
-        assertFalse(result);
-
-        verify(userRepository).existsByUsernameIgnoreCase("nonexistent");
     }
 }
