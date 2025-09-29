@@ -23,8 +23,11 @@ steps:
       set -e
       echo "Cleaning old test files..."
       find src/test/java -name "*Test.java" -type f -delete || true
+
       echo "Running EvoSuite test generation..."
-      mvn -B evosuite:generate evosuite:export
+      mvn -B org.evosuite.plugins:evosuite-maven-plugin:1.2.1:generate \
+          org.evosuite.plugins:evosuite-maven-plugin:1.2.1:export
+
       echo "Generated test files:"
       find src/test/java -name "*Test.java" -type f || echo "No tests generated!"
 
