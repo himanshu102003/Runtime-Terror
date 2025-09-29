@@ -108,6 +108,14 @@ METHOD OVERLOADING HANDLING:
 - Use proper type casting or specific object types when calling methods
 - For method references, always use explicit lambda expressions instead
 
+UTILITY CLASS TESTING:
+- For utility classes with private constructors, do NOT test constructor instantiation
+- Private empty constructors are not meant to be tested for exceptions
+- Focus on testing the public static methods instead
+- Use reflection only if the constructor actually throws exceptions
+- For classes with private constructors like "private ClassName() {{}}", skip constructor testing
+- Test the static constants and static methods functionality instead
+
 IMPORTANT: Use these correct imports:
 - import static org.mockito.Mockito.*;
 - import org.mockito.MockedStatic;
