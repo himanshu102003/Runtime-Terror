@@ -10,7 +10,7 @@ from typing import List
 
 # --- Configuration ---
 LOCATION = "us-central1"
-DEFAULT_CONTEXT_MAX_CHARS = 180_000  # soft cap for included context
+DEFAULT_CONTEXT_MAX_CHARS = 990_000  # soft cap for included context
 SUMMARY_SIGNATURE_LIMIT = 25  # max method signatures per file in summary mode
 
 def get_access_token():
@@ -107,6 +107,20 @@ METHOD OVERLOADING HANDLING:
 - Create separate test methods for each overloaded method variant
 - Use proper type casting or specific object types when calling methods
 - For method references, always use explicit lambda expressions instead
+- CRITICAL: Always declare mock parameters with specific types, not generic types
+- Example: Use "ObjectNode mockNode = mock(ObjectNode.class)" not "mock(JsonNode.class)"
+- Example: Use "ArrayNode mockArray = mock(ArrayNode.class)" not "mock(JsonNode.class)"
+- When calling overloaded methods, ensure parameter types match exactly with method signatures
+- For BigDecimalConverter specifically: use ObjectNode and ArrayNode types, never JsonNode
+- Bad: converter.convert("field", value, mockJsonNode) - CAUSES AMBIGUITY
+- Good: converter.convert("field", value, mockObjectNode) where mockObjectNode is ObjectNode type
+
+COMPILATION ERROR PREVENTION:
+- Always use specific concrete types for mock objects, never parent types or interfaces
+- When testing classes with overloaded methods, create type-specific mocks
+- Verify that each method call has unambiguous parameter types
+- Use concrete classes like ObjectNode, ArrayNode instead of interfaces like JsonNode
+- Double-check that mock declarations match the exact parameter types in method signatures
 
 UTILITY CLASS TESTING:
 - For utility classes with private constructors, do NOT test constructor instantiation
