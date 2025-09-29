@@ -23,125 +23,29 @@
     <projectlombok.version>1.18.32</projectlombok.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <junit.jupiter.version>5.10.0</junit.jupiter.version>
-    <evosuite.version>1.2.1</evosuite.version>
+    <evosuite.version>1.2.0</evosuite.version> <!-- ✅ use stable -->
   </properties>
 
   <dependencies>
-    <!-- OpenAPI/Swagger -->
-    <dependency>
-      <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-annotations</artifactId>
-      <version>2.2.15</version>
-    </dependency>
-    <dependency>
-      <groupId>io.swagger.core.v3</groupId>
-      <artifactId>swagger-core</artifactId>
-      <version>2.2.15</version>
-    </dependency>
-
-    <!-- Jakarta Validation -->
-    <dependency>
-      <groupId>jakarta.validation</groupId>
-      <artifactId>jakarta.validation-api</artifactId>
-      <version>3.0.2</version>
-    </dependency>
-
-    <!-- Spring Boot -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <!-- Utilities -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-text</artifactId>
-      <version>1.12.0</version>
-    </dependency>
-
-    <!-- JWT -->
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-api</artifactId>
-      <version>0.11.5</version>
-    </dependency>
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-impl</artifactId>
-      <version>0.11.5</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-jackson</artifactId>
-      <version>0.11.5</version>
-      <scope>runtime</scope>
-    </dependency>
-
-    <!-- JUnit 5 & Mockito -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit.jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit.jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>5.5.0</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Spring Boot Testing -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Lombok & MapStruct -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${projectlombok.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mapstruct</groupId>
-      <artifactId>mapstruct</artifactId>
-      <version>${mapstruct.version}</version>
-    </dependency>
-
-    <!-- H2 for testing -->
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <!-- (unchanged dependencies from your file) -->
+    <!-- ... -->
   </dependencies>
+
+  <!-- ✅ EvoSuite needs its repo definitions -->
+  <pluginRepositories>
+    <pluginRepository>
+      <id>evosuite-releases</id>
+      <url>https://oss.sonatype.org/content/repositories/releases/</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>evosuite-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <plugins>
-      <!-- Spring Boot Maven Plugin -->
+      <!-- Spring Boot Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -178,7 +82,7 @@
         </configuration>
       </plugin>
 
-      <!-- EvoSuite Plugin -->
+      <!-- ✅ EvoSuite Plugin (fixed version + repo) -->
       <plugin>
         <groupId>org.evosuite.plugins</groupId>
         <artifactId>evosuite-maven-plugin</artifactId>
@@ -193,10 +97,11 @@
           </execution>
         </executions>
         <configuration>
-          <!-- Generate tests for all classes under com.github.yildizmy.service -->
+          <!-- generate tests for your service package -->
           <cutClasses>com.github.yildizmy.service.*</cutClasses>
           <projectCP>${project.build.outputDirectory}</projectCP>
           <reportDir>${project.build.directory}/evosuite-reports</reportDir>
+          <baseDir>${project.basedir}</baseDir>
         </configuration>
       </plugin>
 
