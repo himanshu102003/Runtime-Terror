@@ -80,13 +80,23 @@ def try_generate_with_model(api_endpoint: str, access_token: str, source_code: s
 Generate comprehensive JUnit 5 test cases for the following Java class.
 Requirements:
 1. Use proper package declaration: package {package_name};
-2. Include all necessary imports
+2. Include all necessary imports (use standard JUnit 5 and Mockito imports)
 3. Use @ExtendWith(MockitoExtension.class) for mocking
-4. Test all public methods with positive, negative, and edge cases
-5. Use meaningful test method names
-6. Include proper assertions
-7. Mock external dependencies
-8. Provide only clean Java code without explanations or markdown
+4. For static method mocking, use try-with-resources: try (MockedStatic<ClassName> mock = Mockito.mockStatic(ClassName.class))
+5. Test all public methods with positive, negative, and edge cases
+6. Use meaningful test method names following convention: should_ReturnExpected_When_InputCondition
+7. Include proper assertions using JUnit 5 assertions
+8. Mock external dependencies appropriately
+9. Avoid using Log4j2 core classes directly - instead test logging behavior through public APIs
+10. For configuration classes, focus on testing bean creation and property binding
+11. Use @Mock and @InjectMocks annotations instead of manual mock creation
+12. Provide only clean Java code without explanations or markdown
+
+IMPORTANT: Use these correct imports:
+- import static org.mockito.Mockito.*;
+- import org.mockito.MockedStatic;
+- DO NOT import org.apache.logging.log4j.core.* (causes compilation issues)
+- For logging tests, mock the logger interface, not core classes
 
 Source code:
 {source_code}
@@ -168,11 +178,25 @@ def should_skip_file(file_path):
         'Test.java',
         'Tests.java',
         'Application.java',
+        'Configuration.java',
         'Config.java'
     ]
     
+    # Also skip files in config directories if they are simple configuration classes
+    skip_dirs = ['config']
+    
     filename = os.path.basename(file_path)
-    return any(pattern in filename for pattern in skip_patterns)
+    dirname = os.path.basename(os.path.dirname(file_path))
+    
+    # Check filename patterns
+    if any(pattern in filename for pattern in skip_patterns):
+        return True
+    
+    # Skip simple configuration classes in config directories
+    if dirname in skip_dirs and 'Configuration' in filename:
+        return True
+    
+    return False
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate JUnit tests using Vertex AI")

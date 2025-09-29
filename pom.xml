@@ -27,6 +27,7 @@
 		<bucket4j.version>4.10.0</bucket4j.version>
 		<spring.admin.version>2.3.0</spring.admin.version>
 		<partialize.version>release~20.05</partialize.version>
+		<mockito.version>3.12.4</mockito.version>
 	</properties>
 
 	<parent>
@@ -51,6 +52,24 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Additional test dependencies -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>${mockito.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
