@@ -1,17 +1,18 @@
 steps:
-# 1) Install Python dependencies (only needed for coverage script)
+# 1) Install Python dependencies (for coverage validation script)
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
+      set -e
       python -m venv /workspace/venv
       source /workspace/venv/bin/activate
       pip install --upgrade pip
       pip install requests lxml google-auth
 
-# 2) Generate tests using EvoSuite
+# 2) Clean old tests & generate new ones with EvoSuite
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'generate-tests'
   entrypoint: 'bash'
@@ -19,25 +20,25 @@ steps:
   args:
     - '-c'
     - |
-      echo "Cleaning old tests..."
+      set -e
+      echo "Cleaning old test files..."
       find src/test/java -name "*Test.java" -type f -delete || true
-      echo "Running EvoSuite..."
-      mvn evosuite:generate evosuite:export
+      echo "Running EvoSuite test generation..."
+      mvn -B evosuite:generate evosuite:export
       echo "Generated test files:"
-      find src/test/java -name "*Test.java" -type f
+      find src/test/java -name "*Test.java" -type f || echo "No tests generated!"
 
-# 3) Verify Java version and run Maven tests
+# 3) Verify Java & Maven versions (debugging step)
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      echo "Java version (should be 17):"
       java -version
-      echo "Maven version:"
       mvn -version
 
+# 4) Run tests + generate JaCoCo coverage report
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
   entrypoint: 'mvn'
@@ -47,23 +48,27 @@ steps:
     - 'test'
     - 'jacoco:report'
 
-# 4) Upload reports to GCS
+# 5) Upload reports + generated tests to GCS
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
+      set -e
+      REPORTS_DIR="gs://runtime-terror-logs/reports/$SHORT_SHA"
+      echo "Uploading reports to $REPORTS_DIR ..."
+      gsutil -m cp -r backend/target "$REPORTS_DIR/"
+      gsutil -m cp -r backend/src/test/java "$REPORTS_DIR/tests/"
 
-# 5) Check coverage
+# 6) Check coverage threshold (example: 40%)
 - name: 'python:3.11'
   id: 'check-coverage'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
+      set -e
       source /workspace/venv/bin/activate
       python tools/check_coverage.py backend/target/site/jacoco/jacoco.xml 0.40
 
