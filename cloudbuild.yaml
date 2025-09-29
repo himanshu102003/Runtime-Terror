@@ -1,5 +1,5 @@
 steps:
-# 1) Python dependencies
+# 1) Install Python dependencies (for coverage validation)
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
@@ -21,17 +21,18 @@ steps:
     - '-c'
     - |
       set -e
+      echo "Cleaning old test files..."
       find src/test/java -name "*Test.java" -type f -delete || true
 
-# 3) Generate Randoop tests
+# 3) Generate tests using Randoop
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'generate-randoop-tests'
   entrypoint: 'mvn'
   dir: 'backend'
   args:
-    - 'org.randoop:randoop-maven-plugin:4.7.2:gentests'
+    - 'randoop:gentests'
 
-# 4) Verify Java & Maven
+# 4) Verify Java & Maven versions (debugging)
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
@@ -41,7 +42,7 @@ steps:
       java -version
       mvn -version
 
-# 5) Run tests + JaCoCo
+# 5) Run tests + generate JaCoCo coverage report
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
   entrypoint: 'mvn'
@@ -51,7 +52,7 @@ steps:
     - 'test'
     - 'jacoco:report'
 
-# 6) Upload reports & tests
+# 6) Upload reports + generated tests to GCS
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
   entrypoint: 'bash'
@@ -59,11 +60,11 @@ steps:
     - '-c'
     - |
       set -e
-      REPORTS_DIR=gs://runtime-terror-logs/reports/${SHORT_SHA}
-      gsutil -m cp -r backend/target "$REPORTS_DIR/"
-      gsutil -m cp -r backend/target/generated-test-sources/randoop "$REPORTS_DIR/generated-tests/"
+      echo "Uploading reports to gs://runtime-terror-logs/reports/${SHORT_SHA} ..."
+      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/${SHORT_SHA}/
+      gsutil -m cp -r backend/target/generated-test-sources/randoop gs://runtime-terror-logs/reports/${SHORT_SHA}/generated-tests/
 
-# 7) Check coverage
+# 7) Check coverage threshold (example: 40%)
 - name: 'python:3.11'
   id: 'check-coverage'
   entrypoint: 'bash'
