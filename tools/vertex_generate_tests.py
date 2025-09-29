@@ -107,7 +107,7 @@ Source code:
     request_body = {
         "contents": [{
             "role": "user",
-            "parts": [{"text": prompt}]
+            "parts": [{"text": base_requirements}]
         }],
         "generationConfig": {
             "temperature": 0.1,
