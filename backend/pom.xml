@@ -171,30 +171,7 @@
         </configuration>
       </plugin>
 
-      <!-- Randoop Plugin -->
       <plugin>
-        <groupId>org.randoop</groupId>
-        <artifactId>randoop-maven-plugin</artifactId>
-        <version>${randoop.version}</version>
-        <executions>
-          <execution>
-            <id>generate-tests</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>gentests</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/generated-tests</outputDirectory>
-              <testPackageName>com.github.yildizmy.service</testPackageName>
-              <classListFile>${project.basedir}/randoop-classes.txt</classListFile>
-              <junitOutputDir>${project.build.directory}/generated-test-sources/randoop</junitOutputDir>
-              <timeLimitInSeconds>60</timeLimitInSeconds>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-             <!-- Randoop Maven Plugin -->
-<plugin>
     <groupId>org.randoop</groupId>
     <artifactId>randoop-maven-plugin</artifactId>
     <version>4.7.2</version>
@@ -206,7 +183,6 @@
                 <goal>gentests</goal>
             </goals>
             <configuration>
-                <!-- Package(s) to generate tests for -->
                 <testClassRegex>com.github.yildizmy.service.*</testClassRegex>
                 <junitOutputDir>${project.build.directory}/generated-test-sources/randoop</junitOutputDir>
                 <timeoutInSeconds>60</timeoutInSeconds>
