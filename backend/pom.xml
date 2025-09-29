@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
@@ -26,27 +27,26 @@
   </properties>
 
   <dependencies>
-  <!-- OpenAPI/Swagger Dependencies -->
-  <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-annotations</artifactId>
-        <version>2.2.15</version>
-    </dependency>
-    
+    <!-- OpenAPI/Swagger -->
     <dependency>
-        <groupId>io.swagger.core.v3</groupId>
-        <artifactId>swagger-core</artifactId>
-        <version>2.2.15</version>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>2.2.15</version>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core</artifactId>
+      <version>2.2.15</version>
     </dependency>
 
-     <!-- Jakarta Validation Dependencies -->
+    <!-- Jakarta Validation -->
     <dependency>
-        <groupId>jakarta.validation</groupId>
-        <artifactId>jakarta.validation-api</artifactId>
-        <version>3.0.2</version>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>3.0.2</version>
     </dependency>
 
-    <!-- Spring Boot Dependencies -->
+    <!-- Spring Boot -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -67,25 +67,23 @@
       <version>1.12.0</version>
     </dependency>
 
-    <!-- JWT Dependencies -->
+    <!-- JWT -->
     <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-api</artifactId>
-        <version>0.11.5</version>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>0.11.5</version>
     </dependency>
-    
     <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-impl</artifactId>
-        <version>0.11.5</version>
-        <scope>runtime</scope>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>0.11.5</version>
+      <scope>runtime</scope>
     </dependency>
-    
     <dependency>
-        <groupId>io.jsonwebtoken</groupId>
-        <artifactId>jjwt-jackson</artifactId>
-        <version>0.11.5</version>
-        <scope>runtime</scope>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>0.11.5</version>
+      <scope>runtime</scope>
     </dependency>
 
     <!-- JUnit 5 & Mockito -->
@@ -108,7 +106,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Spring Boot Test & Security Test -->
+    <!-- Spring Boot Testing -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -132,12 +130,13 @@
       <artifactId>mapstruct</artifactId>
       <version>${mapstruct.version}</version>
     </dependency>
-    <!-- Add this dependency for testing -->
-<dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-    <scope>test</scope>
-</dependency>
+
+    <!-- H2 for testing -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -176,12 +175,32 @@
               <version>${mapstruct.version}</version>
             </path>
           </annotationProcessorPaths>
-          <generatedSourcesDirectory>${project.basedir}/target/generated-sources</generatedSourcesDirectory>
-          <generatedTestSourcesDirectory>${project.basedir}/target/generated-test-sources</generatedTestSourcesDirectory>
         </configuration>
       </plugin>
 
-      <!-- JaCoCo Plugin for Test Coverage -->
+      <!-- EvoSuite Plugin -->
+      <plugin>
+        <groupId>org.evosuite.plugins</groupId>
+        <artifactId>evosuite-maven-plugin</artifactId>
+        <version>${evosuite.version}</version>
+        <executions>
+          <execution>
+            <id>generate-tests</id>
+            <goals>
+              <goal>generate</goal>
+              <goal>export</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <!-- Generate tests for all classes under com.github.yildizmy.service -->
+          <cutClasses>com.github.yildizmy.service.*</cutClasses>
+          <projectCP>${project.build.outputDirectory}</projectCP>
+          <reportDir>${project.build.directory}/evosuite-reports</reportDir>
+        </configuration>
+      </plugin>
+
+      <!-- JaCoCo Plugin -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -194,14 +213,13 @@
           </execution>
           <execution>
             <id>report</id>
-            <phase>test</phase>
+            <phase>verify</phase>
             <goals>
               <goal>report</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
 </project>
