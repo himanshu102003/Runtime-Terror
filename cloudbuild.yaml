@@ -1,17 +1,18 @@
 steps:
-# 1) Install Python dependencies
+# 1) Install Python dependencies in a dedicated volume
 - name: 'python:3.11'
   id: 'install-deps'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
+      mkdir -p /workspace/venv
       python -m venv /workspace/venv
       source /workspace/venv/bin/activate
       pip install --upgrade pip
       pip install requests google-auth lxml google-cloud-aiplatform vertexai
 
-# 2) Generate AI tests
+# 2) Generate AI tests with volume access
 - name: 'python:3.11'
   id: 'generate-tests'
   entrypoint: 'bash'
@@ -23,6 +24,9 @@ steps:
       source /workspace/venv/bin/activate
       cd /workspace
       
+      # Make sure directories exist
+      mkdir -p backend/src/test/java
+      
       # Clean existing generated tests to avoid conflicts
       find backend/src/test/java -name "*Test.java" -type f -delete || true
       
@@ -33,7 +37,7 @@ steps:
       echo "Generated test files:"
       find backend/src/test/java -name "*Test.java" -type f
 
-# 3) Verify Java version and run Maven tests
+# 3) Verify Java version and Maven
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'verify-java'
   entrypoint: 'bash'
@@ -45,9 +49,10 @@ steps:
       echo "Maven version:"
       mvn -version
 
-# 4) Display and upload generated test files
+# 4) Display and upload generated test files (with explicit dependencies on previous step)
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'display-and-upload-tests'
+  waitFor: ['generate-tests']
   entrypoint: 'bash'
   args:
     - '-c'
@@ -59,20 +64,16 @@ steps:
       echo -e "\n=== LIST OF GENERATED TEST FILES ==="
       find backend/src/test/java -name "*Test.java" -type f | sort
       
-      echo -e "\n=== TEST FILE CONTENTS PREVIEW ==="
-      for file in $(find backend/src/test/java -name "*Test.java" -type f | sort); do
-        echo "----------------------------------------"
-        echo "FILE: $file"
-        echo "SIZE: $(wc -l < "$file") lines"
-        echo "PACKAGE: $(head -1 "$file")"
-        echo "CLASS: $(grep -E "^(class|public class)" "$file" | head -1)"
-        echo "TEST METHODS: $(grep -c "@Test" "$file") methods"
-        echo "----------------------------------------"
-      done
+      # Create directories in the bucket if they don't exist
+      gsutil mb -p runtime-terror-473409 -l us-central1 gs://runtime-terror-logs/ || true
+      gsutil mb -p runtime-terror-473409 -l us-central1 gs://runtime-terror-logs/generated-tests/ || true
+      
+      # Create directory for this specific build
+      gsutil mb -p runtime-terror-473409 -l us-central1 gs://runtime-terror-logs/generated-tests/$SHORT_SHA/ || true
       
       echo -e "\n=== UPLOADING GENERATED TESTS TO LOGS ==="
       # Upload generated test files to GCS for logging
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/generated-tests/$SHORT_SHA/
+      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/generated-tests/$SHORT_SHA/ || echo "Warning: Upload failed but continuing"
       
       # Create a summary file and upload it
       echo "Build ID: $BUILD_ID" > /tmp/test-generation-summary.txt
@@ -82,33 +83,44 @@ steps:
       echo -e "\nGenerated files:" >> /tmp/test-generation-summary.txt
       find backend/src/test/java -name "*Test.java" -type f | sort >> /tmp/test-generation-summary.txt
       
-      gsutil cp /tmp/test-generation-summary.txt gs://runtime-terror-logs/generated-tests/$SHORT_SHA/summary.txt
+      gsutil cp /tmp/test-generation-summary.txt gs://runtime-terror-logs/generated-tests/$SHORT_SHA/summary.txt || echo "Warning: Summary upload failed but continuing"
       
       echo "✅ Generated test files uploaded to: gs://runtime-terror-logs/generated-tests/$SHORT_SHA/"
 
-# 5) Run Maven tests
+# 5) Run Maven tests with explicit dependency on upload step
 - name: 'maven:3.9.4-eclipse-temurin-17'
   id: 'run-tests'
-  entrypoint: 'mvn'
+  waitFor: ['display-and-upload-tests']
+  entrypoint: 'bash'
   dir: 'backend'
   args: 
-    - 'clean'
-    - 'test'
-    - 'jacoco:report'
+    - '-c'
+    - |
+      echo "Installing necessary packages for Maven execution..."
+      apt-get update && apt-get install -y python3 python3-pip
+      
+      echo "Running Maven tests..."
+      mvn clean test jacoco:report
 
-# 6) Upload reports to GCS
+# 6) Upload reports to GCS with explicit dependency on test step
 - name: 'gcr.io/cloud-builders/gsutil'
   id: 'upload-reports'
+  waitFor: ['run-tests']
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
+      # Create directories if they don't exist
+      gsutil mb -p runtime-terror-473409 -l us-central1 gs://runtime-terror-logs/reports/ || true
+      gsutil mb -p runtime-terror-473409 -l us-central1 gs://runtime-terror-logs/reports/$SHORT_SHA/ || true
+      
+      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/ || echo "Warning: Reports upload failed but continuing"
+      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/ || echo "Warning: Tests upload failed but continuing"
 
-# 7) Check coverage
+# 7) Check coverage with explicit dependency on upload reports step
 - name: 'python:3.11'
   id: 'check-coverage'
+  waitFor: ['upload-reports']
   entrypoint: 'bash'
   args:
     - '-c'
@@ -127,5 +139,5 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_8' 
   diskSizeGb: 10
