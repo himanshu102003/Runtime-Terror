@@ -141,6 +141,13 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+           <!-- https://mvnrepository.com/artifact/org.evosuite/evosuite-standalone-runtime -->
+<dependency>
+    <groupId>org.evosuite</groupId>
+    <artifactId>evosuite-standalone-runtime</artifactId>
+    <version>1.0.5</version>
+    <scope>test</scope>
+</dependency>
   </dependencies>
 
   <build>
