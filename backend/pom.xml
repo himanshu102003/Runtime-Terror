@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -20,32 +20,132 @@
 
   <properties>
     <java.version>17</java.version>
-    <projectlombok.version>1.18.32</projectlombok.version>
-    <mapstruct.version>1.5.5.Final</mapstruct.version>
-    <junit.jupiter.version>5.10.0</junit.jupiter.version>
-    <evosuite.version>1.2.0</evosuite.version> <!-- ✅ use stable -->
+    <projectlombok.version>1.18.34</projectlombok.version>
+    <mapstruct.version>1.6.2</mapstruct.version>
+    <junit.jupiter.version>5.11.3</junit.jupiter.version>
+    <mockito.version>5.12.0</mockito.version>
+    <swagger.version>2.2.25</swagger.version>
+    <evosuite.version>1.2.1</evosuite.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <commons-text.version>1.13.0</commons-text.version>
   </properties>
 
   <dependencies>
-    <!-- (unchanged dependencies from your file) -->
-    <!-- ... -->
-  </dependencies>
+    <!-- OpenAPI/Swagger -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>${swagger.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-core</artifactId>
+      <version>${swagger.version}</version>
+    </dependency>
 
-  <!-- ✅ EvoSuite needs its repo definitions -->
-  <pluginRepositories>
-    <pluginRepository>
-      <id>evosuite-releases</id>
-      <url>https://oss.sonatype.org/content/repositories/releases/</url>
-    </pluginRepository>
-    <pluginRepository>
-      <id>evosuite-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </pluginRepository>
-  </pluginRepositories>
+    <!-- Jakarta Validation -->
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+
+    <!-- Spring Boot Starters -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Utilities -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>${commons-text.version}</version>
+    </dependency>
+
+    <!-- JWT -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>0.12.6</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>0.12.6</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>0.12.6</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- JUnit 5 & Mockito -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Spring Boot Testing -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Lombok & MapStruct -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${projectlombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${mapstruct.version}</version>
+    </dependency>
+
+    <!-- H2 for testing -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
-      <!-- Spring Boot Plugin -->
+      <!-- Spring Boot Maven Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -82,7 +182,7 @@
         </configuration>
       </plugin>
 
-      <!-- ✅ EvoSuite Plugin (fixed version + repo) -->
+      <!-- EvoSuite Plugin -->
       <plugin>
         <groupId>org.evosuite.plugins</groupId>
         <artifactId>evosuite-maven-plugin</artifactId>
@@ -97,11 +197,9 @@
           </execution>
         </executions>
         <configuration>
-          <!-- generate tests for your service package -->
           <cutClasses>com.github.yildizmy.service.*</cutClasses>
           <projectCP>${project.build.outputDirectory}</projectCP>
           <reportDir>${project.build.directory}/evosuite-reports</reportDir>
-          <baseDir>${project.basedir}</baseDir>
         </configuration>
       </plugin>
 
@@ -109,7 +207,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>${jacoco.version}</version>
         <executions>
           <execution>
             <goals>
