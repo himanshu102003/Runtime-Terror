@@ -66,14 +66,31 @@ steps:
       source /workspace/venv/bin/activate
       python tools/check_coverage.py target/site/jacoco/jacoco.xml 0.40
 
+# 6) Upload artifacts to GCS (backup)
+- name: 'gcr.io/cloud-builders/gsutil'
+  id: 'upload-artifacts'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      echo "Uploading build artifacts..."
+      gsutil -m cp -r target/jacoco.exec gs://runtime-terror-logs/build-artifacts/$SHORT_SHA/target/ || true
+      gsutil -m cp -r target/site/jacoco gs://runtime-terror-logs/build-artifacts/$SHORT_SHA/target/site/ || true
+      gsutil -m cp -r target/surefire-reports gs://runtime-terror-logs/build-artifacts/$SHORT_SHA/target/ || true
+      if [ -d "src/test/java" ] && [ "$(find src/test/java -name '*.java' | wc -l)" -gt 0 ]; then
+        gsutil -m cp -r src/test/java gs://runtime-terror-logs/build-artifacts/$SHORT_SHA/src/test/ || true
+      else
+        echo "No test files found to upload"
+      fi
+
 timeout: '1800s'
 
-artifacts:
-  objects:
-    location: 'gs://runtime-terror-logs/build-artifacts/${SHORT_SHA}/'
-    paths: 
-      - 'target/**'
-      - 'src/test/java/**'
+# Artifacts are now uploaded in step 6 with proper error handling
+# artifacts:
+#   objects:
+#     location: 'gs://runtime-terror-logs/build-artifacts/${SHORT_SHA}/'
+#     paths: 
+#       - 'target/jacoco.exec'
 
 options:
   logging: CLOUD_LOGGING_ONLY
