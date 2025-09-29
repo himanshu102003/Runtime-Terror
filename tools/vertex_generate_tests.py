@@ -101,6 +101,13 @@ SPECIAL HANDLING FOR LOMBOK LOGGERS:
 - Focus on testing the business logic, not the logging statements
 - For event listeners like CacheEventListener, test that the method executes without errors
 
+METHOD OVERLOADING HANDLING:
+- When testing overloaded methods, be explicit about parameter types
+- Use specific parameter types in method calls to avoid ambiguity
+- Create separate test methods for each overloaded method variant
+- Use proper type casting or specific object types when calling methods
+- For method references, always use explicit lambda expressions instead
+
 IMPORTANT: Use these correct imports:
 - import static org.mockito.Mockito.*;
 - import org.mockito.MockedStatic;
