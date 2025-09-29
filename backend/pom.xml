@@ -136,6 +136,30 @@
 
   <build>
     <plugins>
+
+<!-- Randoop Maven Plugin -->
+      <plugin>
+        <groupId>org.randoop</groupId>
+        <artifactId>randoop-maven-plugin</artifactId>
+        <version>4.7.2</version>
+        <executions>
+          <execution>
+            <id>generate-tests</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>gentests</goal>
+            </goals>
+            <configuration>
+              <testClassRegex>com.github.yildizmy.service.*</testClassRegex>
+              <junitOutputDir>${project.build.directory}/generated-test-sources/randoop</junitOutputDir>
+              <timeoutInSeconds>60</timeoutInSeconds>
+              <outputLimit>500</outputLimit>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+             
       <!-- Spring Boot Maven Plugin -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
@@ -165,28 +189,7 @@
         </configuration>
       </plugin>
 
-      <!-- Randoop Maven Plugin -->
-      <plugin>
-        <groupId>org.randoop</groupId>
-        <artifactId>randoop-maven-plugin</artifactId>
-        <version>4.7.2</version>
-        <executions>
-          <execution>
-            <id>generate-tests</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>gentests</goal>
-            </goals>
-            <configuration>
-              <testClassRegex>com.github.yildizmy.service.*</testClassRegex>
-              <junitOutputDir>${project.build.directory}/generated-test-sources/randoop</junitOutputDir>
-              <timeoutInSeconds>60</timeoutInSeconds>
-              <outputLimit>500</outputLimit>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
+      
       <!-- JaCoCo Maven Plugin -->
       <plugin>
         <groupId>org.jacoco</groupId>
