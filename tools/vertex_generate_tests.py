@@ -6,9 +6,12 @@ import google.auth
 import google.auth.transport.requests
 import time
 from pathlib import Path
+from typing import List
 
 # --- Configuration ---
 LOCATION = "us-central1"
+DEFAULT_CONTEXT_MAX_CHARS = 180_000  # soft cap for included context
+SUMMARY_SIGNATURE_LIMIT = 25  # max method signatures per file in summary mode
 
 def get_access_token():
     """Gets the default access token to authenticate to the Google Cloud API."""
@@ -48,7 +51,7 @@ def extract_package_name(source_code):
     match = re.search(r'package\s+([\w\.]+);', source_code)
     return match.group(1) if match else ""
 
-def generate_tests(access_token: str, project_id: str, source_code: str, class_name: str, package_name: str, out_dir: str, relative_path: str):
+def generate_tests(access_token: str, project_id: str, source_code: str, class_name: str, package_name: str, out_dir: str, relative_path: str, project_context: str = ""):
     """Generates tests by calling the Vertex AI REST API."""
     
     # Updated with current available models
@@ -65,7 +68,7 @@ def generate_tests(access_token: str, project_id: str, source_code: str, class_n
             f"/locations/{LOCATION}/publishers/google/models/{model_id}:generateContent"
         )
         
-        if try_generate_with_model(api_endpoint, access_token, source_code, class_name, package_name, out_dir):
+        if try_generate_with_model(api_endpoint, access_token, source_code, class_name, package_name, out_dir, project_context=project_context):
             print(f"✅ Successfully used model: {model_id}")
             return True
     
@@ -73,11 +76,10 @@ def generate_tests(access_token: str, project_id: str, source_code: str, class_n
     return False
 
 
-def try_generate_with_model(api_endpoint: str, access_token: str, source_code: str, class_name: str, package_name: str, out_dir: str):
+def try_generate_with_model(api_endpoint: str, access_token: str, source_code: str, class_name: str, package_name: str, out_dir: str, project_context: str = ""):
     """Try to generate tests using a specific model endpoint."""
     
-    prompt = f"""
-Generate comprehensive JUnit 5 test cases for the following Java class.
+    base_requirements = f"""Generate comprehensive JUnit 5 test cases for the TARGET CLASS below.
 Requirements:
 1. Use proper package declaration: package {package_name};
 2. Include all necessary imports (use standard JUnit 5 and Mockito imports)
@@ -206,6 +208,9 @@ if __name__ == "__main__":
     parser.add_argument("--out_dir", 
                        default="src/test/java", 
                        help="Where to write generated tests")
+    parser.add_argument("--include_project_context", action="store_true", help="Include (full or summarized) project context in each prompt")
+    parser.add_argument("--context_mode", choices=["auto", "full", "summary"], default="auto", help="Context mode selection")
+    parser.add_argument("--context_max_chars", type=int, default=DEFAULT_CONTEXT_MAX_CHARS, help="Max characters of project context to embed")
     args = parser.parse_args()
 
     print("🔐 Authenticating with Google Cloud...")
@@ -225,6 +230,49 @@ if __name__ == "__main__":
     failed_generations = 0
     
     print(f"🔍 Scanning for Java files in: {args.source_dir}")
+
+    # ---------- Build optional project context ----------
+    project_context = ""
+    if args.include_project_context:
+        print("🧩 Building project context ...")
+        all_files: List[str] = []
+        for r, _, fs in os.walk(args.source_dir):
+            for f in fs:
+                if f.endswith('.java') and not should_skip_file(os.path.join(r, f)):
+                    all_files.append(os.path.join(r, f))
+
+        raw_blobs = []
+        for fp in all_files:
+            try:
+                with open(fp, 'r', encoding='utf-8') as fh:
+                    code_txt = fh.read()
+                rel = os.path.relpath(fp, args.source_dir)
+                raw_blobs.append(f"// FILE: {rel}\n" + code_txt)
+            except Exception as e:
+                print(f"⚠️  Could not read {fp}: {e}")
+
+        concatenated = "\n\n".join(raw_blobs)
+        if args.context_mode == 'full' or (args.context_mode == 'auto' and len(concatenated) <= args.context_max_chars):
+            mode_used = 'full'
+            project_context = concatenated[:args.context_max_chars]
+        else:
+            mode_used = 'summary'
+            signature_regex = re.compile(r'public\s+[^;{=]+\([^)]*\)\s*(?:throws\s+[^{]+)?[{;]')
+            summaries = []
+            for blob in raw_blobs:
+                lines = blob.splitlines()
+                header = lines[0] if lines else '// FILE'
+                code_part = "\n".join(lines[1:])
+                sigs = signature_regex.findall(code_part)
+                if len(sigs) > SUMMARY_SIGNATURE_LIMIT:
+                    sigs = sigs[:SUMMARY_SIGNATURE_LIMIT] + [f"// ... {len(sigs) - SUMMARY_SIGNATURE_LIMIT} more"]
+                summaries.append(header + "\n" + "\n".join(sigs))
+            project_context = "\n\n".join(summaries)
+            if len(project_context) > args.context_max_chars:
+                project_context = project_context[:args.context_max_chars] + "\n// ... truncated ..."
+        print(f"🧩 Context mode: {mode_used}; chars included: {len(project_context)}")
+    else:
+        print("ℹ️  Project context not included (use --include_project_context to enable)")
     
     for root, _, files in os.walk(args.source_dir):
         for file in files:
@@ -255,7 +303,7 @@ if __name__ == "__main__":
                     
                     print(f"📝 Processing: {class_name} (package: {package_name})")
                     
-                    if generate_tests(token, project, code, class_name, package_name, args.out_dir, relative_path):
+                    if generate_tests(token, project, code, class_name, package_name, args.out_dir, relative_path, project_context=project_context):
                         successful_generations += 1
                     else:
                         failed_generations += 1

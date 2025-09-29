@@ -22,25 +22,24 @@ steps:
       source /workspace/venv/bin/activate
       cd /workspace
       python tools/vertex_generate_tests.py \
-        --source_dir=src/main/java/io/github/mariazevedo88/financialjavaapi \
-        --out_dir=src/test/java
+        --source_dir=src/main/java/io/github/mariazevedo88/financialjavaapi/util \
+        --out_dir=src/test/java \
+        --include_project_context
 
 # 3) Verify Java version and run Maven tests
-- name: 'maven:3.9.4-eclipse-temurin-17'
+- name: 'maven:3.9.4-eclipse-temurin-11'
   id: 'verify-java'
-  dir: 'backend'
   entrypoint: 'bash'
   args:
     - '-c'
     - |
-      echo "Java version:"
+      echo "Java version (should be 11):"
       java -version
       echo "Maven version:"
       mvn -version
 
-- name: 'maven:3.9.4-eclipse-temurin-17'
+- name: 'maven:3.9.4-eclipse-temurin-11'
   id: 'run-tests'
-  dir: 'backend'
   entrypoint: 'mvn'
   args: 
     - 'clean'
@@ -54,8 +53,8 @@ steps:
   args:
     - '-c'
     - |
-      gsutil -m cp -r backend/target gs://runtime-terror-logs/reports/$SHORT_SHA/
-      gsutil -m cp -r backend/src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
+      gsutil -m cp -r target gs://runtime-terror-logs/reports/$SHORT_SHA/
+      gsutil -m cp -r src/test/java gs://runtime-terror-logs/reports/$SHORT_SHA/tests/
 
 # 5) Check coverage
 - name: 'python:3.11'
@@ -65,7 +64,7 @@ steps:
     - '-c'
     - |
       source /workspace/venv/bin/activate
-      python tools/check_coverage.py backend/target/site/jacoco/jacoco.xml 0.40
+      python tools/check_coverage.py target/site/jacoco/jacoco.xml 0.40
 
 timeout: '1800s'
 
@@ -78,4 +77,4 @@ artifacts:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'e2-standard-2'
+  machineType: 'E2_MEDIUM'
