@@ -57,7 +57,6 @@ def generate_tests(access_token: str, project_id: str, source_code: str, class_n
     # Updated with current available models
     models_to_try = [
         "gemini-2.5-pro",
-        "qwen2.5",
         "gemini-2.5-flash",
         "gemini-2.0-flash-001"
     ]
