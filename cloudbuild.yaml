@@ -85,13 +85,6 @@ steps:
 
 timeout: '1800s'
 
-# Artifacts are now uploaded in step 6 with proper error handling
-# artifacts:
-#   objects:
-#     location: 'gs://runtime-terror-logs/build-artifacts/${SHORT_SHA}/'
-#     paths: 
-#       - 'target/jacoco.exec'
-
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: 'E2_MEDIUM'
