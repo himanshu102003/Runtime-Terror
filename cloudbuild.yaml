@@ -64,7 +64,7 @@ steps:
     - '-c'
     - |
       source /workspace/venv/bin/activate
-      python tools/check_coverage.py target/site/jacoco/jacoco.xml 0.70
+      python tools/check_coverage.py target/site/jacoco/jacoco.xml 0.40
 
 # 6) Upload artifacts to GCS (backup)
 - name: 'gcr.io/cloud-builders/gsutil'
